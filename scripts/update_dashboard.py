@@ -206,9 +206,14 @@ def call_claude(api_key: str, prompt: str, use_search: bool, max_tokens: int = 3
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
     }
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             r = requests.post(ANTHROPIC_URL, headers=headers, json=body, timeout=300)
+            if r.status_code == 429:
+                wait = int(float(r.headers.get("retry-after", 60))) + 5
+                log(f"Rate limited (429); waiting {wait}s before retrying...")
+                time.sleep(wait)
+                continue
             r.raise_for_status()
             blocks = r.json().get("content", [])
             text = "\n".join(b.get("text", "") for b in blocks if b.get("type") == "text")
@@ -217,8 +222,8 @@ def call_claude(api_key: str, prompt: str, use_search: bool, max_tokens: int = 3
             raise ValueError("Empty text response from Claude")
         except Exception as e:  # noqa: BLE001
             log(f"Claude call attempt {attempt + 1} failed: {e}")
-            time.sleep(10 * (attempt + 1))
-    raise RuntimeError("Claude API failed after 3 attempts")
+            time.sleep(20 * (attempt + 1))
+    raise RuntimeError("Claude API failed after 5 attempts")
 
 
 def extract_json(text: str) -> dict:
