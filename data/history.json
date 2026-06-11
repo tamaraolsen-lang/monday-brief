@@ -18,14 +18,14 @@
     "consumer_sentiment": 49.8
    },
    "politics": {
-    "approve": 35,
-    "disapprove": 60,
+    "approve": 40,
+    "disapprove": 58,
     "econ_approve": 29,
-    "generic_dem": 49.2,
-    "generic_gop": 43.5,
+    "generic_dem": 48,
+    "generic_gop": 41,
     "house_dem_odds": 73,
     "senate_dem_odds": 45,
-    "right_direction": 32
+    "right_direction": 28
    }
   }
  ]
