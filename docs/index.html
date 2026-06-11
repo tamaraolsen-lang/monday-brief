@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Monday Brief — US Economy & Politics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --fog:#F6F7F9; --paper:#FFFFFF; --ink:#16212E; --muted:#69727E; --line:#E3E7EC;
+    --teal:#0E7C66; --teal-soft:#E2F1ED; --amber:#B97400; --amber-soft:#FBF1DD;
+    --red:#C93B3B; --red-soft:#F9E8E8; --dem:#2E6FDB; --gop:#C93B3B;
+    --display:'Fraunces',Georgia,serif; --body:'Inter',-apple-system,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fog);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+
+  /* Masthead */
+  header{padding:30px 0 18px;border-bottom:3px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,6vw,46px);line-height:1.05;margin-top:4px}
+  .dateline{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .sample-banner{margin-top:14px;background:var(--amber-soft);border:1px solid var(--amber);color:var(--amber);
+    font-family:var(--mono);font-size:12px;padding:8px 12px;border-radius:6px;display:none}
+
+  /* Bottom line */
+  .bluf{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--amber);
+    border-radius:10px;padding:22px 22px 16px;margin-top:24px}
+  .bluf .eyebrow{color:var(--amber)}
+  .headline{font-family:var(--display);font-weight:500;font-size:clamp(20px,3.4vw,27px);line-height:1.25;margin:6px 0 14px}
+  .takeaway{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .tag{flex:none;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    padding:3px 8px;border-radius:99px;height:fit-content;margin-top:2px}
+  .tag.economy{background:var(--teal-soft);color:var(--teal)}
+  .tag.politics{background:#E8EEFA;color:var(--dem)}
+
+  /* Sections */
+  h2{font-family:var(--display);font-weight:700;font-size:24px;margin:40px 0 6px;display:flex;align-items:baseline;gap:12px}
+  h2 .rule{flex:1;border-top:1px solid var(--ink);transform:translateY(-6px)}
+  .section-sum{color:var(--muted);max-width:760px;margin-bottom:18px}
+
+  /* Stat cards — the signature delta chips live here */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card .label{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .card .value{font-family:var(--mono);font-weight:600;font-size:27px;margin:6px 0 2px;letter-spacing:-.01em}
+  .card .value .unit{font-size:15px;color:var(--muted)}
+  .card .sub{font-size:11px;color:var(--muted)}
+  .chip{display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:600;
+    padding:2px 8px;border-radius:99px;margin-top:8px}
+  .chip.good{background:var(--teal-soft);color:var(--teal)}
+  .chip.bad{background:var(--red-soft);color:var(--red)}
+  .chip.flat,.chip.neutral{background:var(--amber-soft);color:var(--amber)}
+  .chip.none{background:var(--fog);color:var(--muted)}
+
+  /* Charts */
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+  .chart-box{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .chart-box h3{font-size:13px;font-weight:600;margin-bottom:2px}
+  .chart-box .src{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-bottom:10px}
+  .chart-box .cwrap{position:relative;height:240px}
+  .empty-note{font-size:12.5px;color:var(--muted);padding:24px 8px;text-align:center}
+
+  /* Demographics table */
+  table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:9px 12px;font-size:13px;text-align:left;border-top:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:none}
+  td.num{font-family:var(--mono);font-weight:600}
+  .netbar{height:6px;border-radius:3px;background:var(--line);position:relative;min-width:90px}
+  .netbar i{position:absolute;top:0;bottom:0;border-radius:3px}
+
+  .notes{margin-top:14px;display:grid;gap:8px}
+  .note{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px}
+  .note b{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+
+  footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8}
+
+  @media (max-width:720px){
+    .charts{grid-template-columns:1fr}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .chart-box .cwrap{height:220px}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">US Economy &amp; National Politics · Weekly</div>
+    <h1>The Monday Brief</h1>
+    <div class="dateline">
+      <span id="week-of"></span>
+      <span id="generated-at"></span>
+    </div>
+    <div class="sample-banner" id="sample-banner">
+      ⚠ SAMPLE DATA — this is a design preview. Run the GitHub Actions workflow to fill it with live data.
+    </div>
+  </header>
+
+  <section class="bluf">
+    <div class="eyebrow">Bottom line</div>
+    <div class="headline" id="headline"></div>
+    <div id="takeaways"></div>
+  </section>
+
+  <h2>Economy <span class="rule"></span></h2>
+  <p class="section-sum" id="economy-summary"></p>
+  <div class="cards" id="econ-cards"></div>
+  <div class="charts">
+    <div class="chart-box"><h3>Unemployment by group</h3><div class="src">BLS via FRED · monthly · %</div><div class="cwrap"><canvas id="c-unemp"></canvas></div></div>
+    <div class="chart-box"><h3>Inflation: headline, core, gas, groceries</h3><div class="src">BLS CPI via FRED · year-over-year %</div><div class="cwrap"><canvas id="c-infl"></canvas></div></div>
+    <div class="chart-box"><h3>Monthly job growth</h3><div class="src">BLS nonfarm payrolls · change, thousands</div><div class="cwrap"><canvas id="c-pay"></canvas></div></div>
+    <div class="chart-box"><h3>Weekly jobless claims</h3><div class="src">Dept. of Labor via FRED · initial claims</div><div class="cwrap"><canvas id="c-claims"></canvas></div></div>
+    <div class="chart-box"><h3>Gas price at the pump</h3><div class="src">EIA via FRED · $ per gallon, regular</div><div class="cwrap"><canvas id="c-gas"></canvas></div></div>
+    <div class="chart-box"><h3>Wage growth vs. inflation</h3><div class="src">BLS via FRED · year-over-year %</div><div class="cwrap"><canvas id="c-wages"></canvas></div></div>
+  </div>
+
+  <h2>Politics <span class="rule"></span></h2>
+  <p class="section-sum" id="politics-summary"></p>
+  <div class="cards" id="pol-cards"></div>
+
+  <div class="charts">
+    <div class="chart-box"><h3>Trump approval trend</h3><div class="src">Weekly snapshots · polling averages · %</div><div class="cwrap" id="w-appr"><canvas id="c-appr"></canvas></div></div>
+    <div class="chart-box"><h3>Generic congressional ballot trend</h3><div class="src">Weekly snapshots · polling averages · %</div><div class="cwrap" id="w-gb"><canvas id="c-gb"></canvas></div></div>
+    <div class="chart-box"><h3>Democrats' odds of winning each chamber</h3><div class="src">Weekly snapshots · prediction markets · %</div><div class="cwrap" id="w-odds"><canvas id="c-odds"></canvas></div></div>
+    <div class="chart-box">
+      <h3>Approval by demographic group</h3>
+      <div class="src" id="demo-src"></div>
+      <div style="max-height:240px;overflow-y:auto">
+        <table id="demo-table">
+          <thead><tr><th>Group</th><th>App.</th><th>Dis.</th><th>Net</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>Special elections</b><span id="specials"></span></div>
+    <div class="note"><b>Race ratings</b><span id="ratings"></span></div>
+  </div>
+
+  <footer>
+    Sources: BLS, Dept. of Labor, EIA, Freddie Mac &amp; U. Michigan via FRED · polling averages (Silver Bulletin, VoteHub, RCP, Decision Desk HQ) · Economist/YouGov crosstabs · Polymarket &amp; Kalshi prediction markets · Cook Political Report &amp; Sabato's Crystal Ball.<br>
+    Monthly series (unemployment, CPI, payrolls, wages, sentiment) update on their federal release schedule; claims, gas prices, mortgage rates, polling and odds update weekly. Analysis generated by Claude; verify before relying on any single figure.
+  </footer>
+</div>
+
+<script>
+const D = {"generated_at": "June 11, 2026 \u00b7 12:50 UTC", "week_of": "Week of June 11, 2026", "sample": true, "analysis": {"headline": "Sample data: run the live workflow to replace everything on this page.", "takeaways": [{"tag": "economy", "text": "This is placeholder analysis. The live run pulls real BLS/FRED data and writes real takeaways here."}, {"tag": "economy", "text": "Grocery and gas inflation get their own lines below, exactly as they will with live CPI data."}, {"tag": "economy", "text": "Weekly jobless claims and gas prices update every week; monthly series update when BLS releases them."}, {"tag": "politics", "text": "Approval, the generic ballot, and midterm odds will be pulled fresh each Monday with sources cited."}, {"tag": "politics", "text": "Political trend charts build one point per week \u2014 after a month you'll see real movement."}], "economy_summary": "Placeholder. The live version writes a short paragraph here comparing this week's economic data to last week and last month.", "politics_summary": "Placeholder. The live version summarizes approval, generic-ballot, and prediction-market movement here.", "email_subject": "Monday Brief: sample run", "email_bullets": ["Sample bullet one", "Sample bullet two", "Sample bullet three"]}, "cards": {"economy": [{"label": "Unemployment", "value": 4.6, "unit": "%", "sub": "vs. prior month", "delta": 0.1, "text": "+0.1", "good_when": "down"}, {"label": "Inflation (CPI, YoY)", "value": 3.3, "unit": "%", "sub": "vs. prior month", "delta": 0.0, "text": "0.0", "good_when": "down"}, {"label": "Grocery inflation", "value": 2.5, "unit": "%", "sub": "vs. prior month", "delta": 0.1, "text": "+0.1", "good_when": "down"}, {"label": "Gas inflation", "value": -1.7, "unit": "%", "sub": "vs. prior month", "delta": -0.4, "text": "-0.4", "good_when": "down"}, {"label": "Job growth", "value": 114, "unit": "k", "sub": "payrolls, vs. prior month", "delta": -43, "text": "-43", "good_when": "up"}, {"label": "Jobless claims", "value": 229222, "unit": "", "sub": "weekly, vs. prior week", "delta": 9939, "text": "+9939", "good_when": "down"}, {"label": "Real wage growth", "value": 0.4, "unit": "%", "sub": "wages minus inflation, YoY", "delta": 0.0, "text": "0.0", "good_when": "up"}, {"label": "Gas price", "value": 3.02, "unit": "$", "sub": "regular, vs. prior week", "delta": -0.11, "text": "-0.11", "good_when": "down", "prefix_unit": true}, {"label": "30-yr mortgage", "value": 6.12, "unit": "%", "sub": "vs. prior week", "delta": -0.21, "text": "-0.21", "good_when": "down"}, {"label": "Consumer sentiment", "value": 66.5, "unit": "", "sub": "U. Michigan, vs. prior month", "delta": 1.5, "text": "+1.5", "good_when": "up"}], "politics": [{"label": "Trump approval", "value": 42, "unit": "%", "sub": "disapprove 54% \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}, {"label": "Approval on economy", "value": 39, "unit": "%", "sub": "disapprove 57% \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}, {"label": "Generic ballot \u2014 Dem", "value": 46, "unit": "%", "sub": "GOP 43% \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}, {"label": "Dem House odds", "value": 71, "unit": "%", "sub": "prediction markets \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}, {"label": "Dem Senate odds", "value": 24, "unit": "%", "sub": "prediction markets \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}, {"label": "Right direction", "value": 31, "unit": "%", "sub": "wrong track 61% \u00b7 vs. last week", "delta": null, "text": "\u2014", "good_when": "neutral"}]}, "charts": {"unemployment": {"labels": ["Jun 24", "Jul 24", "Aug 24", "Sep 24", "Oct 24", "Nov 24", "Dec 24", "Jan 25", "Feb 25", "Mar 25", "Apr 25", "May 25", "Jun 25", "Jul 25", "Aug 25", "Sep 25", "Oct 25", "Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26"], "series": [{"name": "Overall", "data": [4.1, 4.1, 4.2, 4.2, 4.2, 4.3, 4.3, 4.3, 4.3, 4.4, 4.4, 4.4, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.6, 4.6, 4.5, 4.5, 4.5, 4.6]}, {"name": "White", "data": [3.6, 3.6, 3.6, 3.6, 3.6, 3.6, 3.5, 3.6, 3.6, 3.7, 3.7, 3.7, 3.7, 3.7, 3.8, 3.8, 3.8, 3.8, 3.8, 3.8, 3.9, 3.9, 3.9, 3.9, 3.9]}, {"name": "Black", "data": [6.8, 6.7, 6.7, 6.8, 6.8, 6.9, 6.9, 7.0, 6.9, 6.9, 7.0, 7.1, 7.2, 7.1, 7.2, 7.1, 7.1, 7.1, 7.2, 7.2, 7.1, 7.1, 7.2, 7.3, 7.3]}, {"name": "Hispanic", "data": [5.0, 5.1, 5.2, 5.3, 5.3, 5.4, 5.4, 5.4, 5.5, 5.5, 5.6, 5.6, 5.6, 5.5, 5.6, 5.6, 5.5, 5.5, 5.4, 5.5, 5.6, 5.5, 5.6, 5.6, 5.6]}, {"name": "Asian", "data": [3.3, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7, 3.8, 3.9, 3.9, 4.0, 4.0, 4.0, 3.9, 3.9, 3.9, 3.9, 4.0, 3.9, 4.0, 4.1, 4.1, 4.1, 4.2]}, {"name": "Men", "data": [4.0, 4.0, 4.0, 3.9, 3.9, 3.9, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.1, 4.1, 4.2, 4.1, 4.1, 4.2, 4.2, 4.2, 4.3]}, {"name": "Women", "data": [3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 4.0, 4.0, 4.0, 4.0, 4.1, 4.1, 4.1, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2]}, {"name": "Ages 16-24", "data": [9.0, 9.0, 8.8, 9.0, 8.8, 8.9, 9.0, 8.9, 8.9, 9.0, 8.8, 8.8, 8.9, 8.9, 9.0, 8.9, 8.8, 8.7, 8.7, 8.9, 9.0, 9.1, 9.1, 9.2, 9.0]}]}, "inflation": {"labels": ["Jun 24", "Jul 24", "Aug 24", "Sep 24", "Oct 24", "Nov 24", "Dec 24", "Jan 25", "Feb 25", "Mar 25", "Apr 25", "May 25", "Jun 25", "Jul 25", "Aug 25", "Sep 25", "Oct 25", "Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26"], "series": [{"name": "All items", "data": [3.3, 3.3, 3.3, 3.3, 3.3, 3.4, 3.4, 3.5, 3.5, 3.5, 3.5, 3.5, 3.6, 3.5, 3.4, 3.3, 3.3, 3.3, 3.3, 3.2, 3.3, 3.3, 3.3, 3.3, 3.3]}, {"name": "Core (ex food & energy)", "data": [3.6, 3.5, 3.5, 3.4, 3.4, 3.4, 3.3, 3.3, 3.3, 3.3, 3.4, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.2, 3.2, 3.3, 3.2, 3.2, 3.1]}, {"name": "Gasoline", "data": [2.9, 3.9, 2.7, 1.5, 2.2, 2.6, 2.8, 2.2, 2.3, 2.4, 2.5, 1.5, 1.2, 0.8, 1.2, 2.2, 3.1, 3.1, 2.8, 2.1, 0.8, -0.4, -0.7, -1.3, -1.7]}, {"name": "Groceries (food at home)", "data": [2.7, 2.6, 2.6, 2.6, 2.6, 2.5, 2.6, 2.8, 2.7, 2.7, 2.7, 2.7, 2.8, 2.8, 2.8, 2.6, 2.7, 2.5, 2.4, 2.4, 2.4, 2.5, 2.6, 2.4, 2.5]}]}, "payrolls": {"labels": ["Jun 25", "Jul 25", "Aug 25", "Sep 25", "Oct 25", "Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26"], "data": [204, 155, 111, 159, 190, 149, 116, 148, 112, 106, 111, 157, 114]}, "claims": {"labels": ["Dec 18", "Dec 25", "Jan 01", "Jan 08", "Jan 15", "Jan 22", "Jan 29", "Feb 05", "Feb 12", "Feb 19", "Feb 26", "Mar 05", "Mar 12", "Mar 19", "Mar 26", "Apr 02", "Apr 09", "Apr 16", "Apr 23", "Apr 30", "May 07", "May 14", "May 21", "May 28", "Jun 04", "Jun 11"], "data": [227024, 218997, 208208, 201082, 206673, 205592, 210928, 213175, 203678, 209779, 202123, 217228, 208573, 211076, 226983, 203625, 227022, 220969, 207777, 224586, 209831, 201398, 217732, 213295, 219283, 229222]}, "gas": {"labels": ["Jun 19", "Jun 26", "Jul 03", "Jul 10", "Jul 17", "Jul 24", "Jul 31", "Aug 07", "Aug 14", "Aug 21", "Aug 28", "Sep 04", "Sep 11", "Sep 18", "Sep 25", "Oct 02", "Oct 09", "Oct 16", "Oct 23", "Oct 30", "Nov 06", "Nov 13", "Nov 20", "Nov 27", "Dec 04", "Dec 11", "Dec 18", "Dec 25", "Jan 01", "Jan 08", "Jan 15", "Jan 22", "Jan 29", "Feb 05", "Feb 12", "Feb 19", "Feb 26", "Mar 05", "Mar 12", "Mar 19", "Mar 26", "Apr 02", "Apr 09", "Apr 16", "Apr 23", "Apr 30", "May 07", "May 14", "May 21", "May 28", "Jun 04", "Jun 11"], "data": [3.13, 2.84, 3.09, 3.02, 3.09, 2.99, 2.84, 3.23, 3.13, 3.03, 2.91, 2.93, 2.8, 2.95, 3.14, 2.88, 3.21, 3.03, 3.25, 3.09, 3.17, 3.13, 2.97, 3.11, 3.16, 3.06, 3.04, 3.27, 2.88, 3.12, 3.03, 3.22, 3.08, 3.05, 3.08, 3.09, 3.03, 3.08, 3.03, 3.06, 3.13, 3.05, 3.02, 2.99, 3.07, 3.16, 3.11, 3.28, 3.12, 3.25, 3.13, 3.02]}, "wages": {"labels": ["Jun 24", "Jul 24", "Aug 24", "Sep 24", "Oct 24", "Nov 24", "Dec 24", "Jan 25", "Feb 25", "Mar 25", "Apr 25", "May 25", "Jun 25", "Jul 25", "Aug 25", "Sep 25", "Oct 25", "Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26"], "series": [{"name": "Wage growth (YoY)", "data": [4.0, 3.9, 3.9, 3.8, 3.8, 3.7, 3.8, 3.8, 3.8, 3.8, 3.8, 3.7, 3.7, 3.6, 3.6, 3.6, 3.7, 3.7, 3.7, 3.7, 3.6, 3.6, 3.7, 3.7, 3.7]}, {"name": "Real wage growth", "data": [0.7, 0.6, 0.6, 0.5, 0.5, 0.3, 0.4, 0.3, 0.3, 0.3, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.4, 0.4, 0.5, 0.3, 0.3, 0.4, 0.4, 0.4]}]}}, "politics": {"current": {"as_of": "2026-06-11", "trump_approval": {"approve": 42, "disapprove": 54, "source": "Sample (avg of averages)"}, "trump_econ_approval": {"approve": 39, "disapprove": 57, "source": "Sample"}, "approval_by_group": [{"group": "Men", "approve": 48, "disapprove": 49}, {"group": "Women", "approve": 37, "disapprove": 59}, {"group": "White voters", "approve": 50, "disapprove": 47}, {"group": "Black voters", "approve": 15, "disapprove": 80}, {"group": "Hispanic voters", "approve": 34, "disapprove": 61}, {"group": "18-29", "approve": 31, "disapprove": 63}, {"group": "30-44", "approve": 40, "disapprove": 55}, {"group": "45-64", "approve": 46, "disapprove": 51}, {"group": "65+", "approve": 47, "disapprove": 51}, {"group": "College grads", "approve": 37, "disapprove": 60}, {"group": "No college degree", "approve": 46, "disapprove": 50}, {"group": "Independents", "approve": 36, "disapprove": 56}], "approval_by_group_source": "Sample (Economist/YouGov-style crosstabs)", "generic_ballot": {"dem": 46, "gop": 43, "source": "Sample average"}, "house_dem_odds": {"pct": 71, "source": "Sample (Polymarket-style)"}, "senate_dem_odds": {"pct": 24, "source": "Sample (Polymarket-style)"}, "right_track": {"right_direction": 31, "wrong_track": 61, "source": "Sample"}, "special_elections_note": "Sample: Democrats have overperformed partisan lean by ~6 points across recent specials.", "race_ratings_note": "Sample: Cook and Sabato both rate the House a toss-up leaning Democratic; Senate leans Republican."}, "history": {"dates": [], "approve": [], "disapprove": [], "generic_dem": [], "generic_gop": [], "house_dem_odds": [], "senate_dem_odds": []}}};
+if (!D) { document.body.innerHTML = "<p style='padding:40px;font-family:monospace'>No data injected — run scripts/update_dashboard.py</p>"; }
+
+const fmt = (v, dec) => v == null ? "—" : Number(v).toLocaleString("en-US", {maximumFractionDigits: dec ?? 1});
+const PALETTE = ["#16212E","#0E7C66","#C93B3B","#B97400","#2E6FDB","#7A4FBF","#4E8DA6","#9AA3AE"];
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = "#69727E";
+Chart.defaults.borderColor = "#E3E7EC";
+
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+// ---- Masthead & bottom line ----
+document.getElementById("week-of").textContent = D.week_of;
+document.getElementById("generated-at").textContent = "Updated " + D.generated_at;
+if (D.sample) document.getElementById("sample-banner").style.display = "block";
+document.getElementById("headline").textContent = (D.analysis || {}).headline || "";
+const tw = document.getElementById("takeaways");
+((D.analysis || {}).takeaways || []).forEach(t => {
+  const row = el("div", "takeaway");
+  row.appendChild(el("span", "tag " + (t.tag === "politics" ? "politics" : "economy"), t.tag));
+  row.appendChild(el("div", "", t.text));
+  tw.appendChild(row);
+});
+document.getElementById("economy-summary").textContent = (D.analysis || {}).economy_summary || "";
+document.getElementById("politics-summary").textContent = (D.analysis || {}).politics_summary || "";
+
+// ---- Stat cards ----
+function chipClass(card) {
+  if (card.delta == null) return "none";
+  if (card.delta === 0) return "flat";
+  if (card.good_when === "neutral") return "neutral";
+  const improved = (card.good_when === "down") ? card.delta < 0 : card.delta > 0;
+  return improved ? "good" : "bad";
+}
+function renderCards(list, mount) {
+  const root = document.getElementById(mount);
+  (list || []).forEach(c => {
+    const dec = (c.unit === "$" || c.label.includes("mortgage")) ? 2 : (c.unit === "" && c.value > 1000 ? 0 : 1);
+    const valueHtml = c.value == null ? "—"
+      : (c.prefix_unit ? "<span class='unit'>$</span>" + fmt(c.value, dec)
+                       : fmt(c.value, dec) + (c.unit && c.unit !== "$" ? "<span class='unit'>" + c.unit + "</span>" : ""));
+    const card = el("div", "card");
+    card.appendChild(el("div", "label", c.label));
+    card.appendChild(el("div", "value", valueHtml));
+    card.appendChild(el("div", "sub", c.sub || ""));
+    const arrow = c.delta == null ? "" : (c.delta > 0 ? "▲ " : c.delta < 0 ? "▼ " : "■ ");
+    card.appendChild(el("span", "chip " + chipClass(c), arrow + (c.text || "—")));
+    root.appendChild(card);
+  });
+}
+renderCards(D.cards.economy, "econ-cards");
+renderCards(D.cards.politics, "pol-cards");
+
+// ---- Charts ----
+const baseOpts = (yFmt) => ({
+  responsive: true, maintainAspectRatio: false, spanGaps: true,
+  interaction: {mode: "index", intersect: false},
+  plugins: {legend: {position: "bottom", labels: {boxWidth: 14, boxHeight: 3, padding: 10}}},
+  scales: {
+    x: {grid: {display: false}, ticks: {maxTicksLimit: 8, maxRotation: 0}},
+    y: {ticks: {callback: yFmt || (v => v)}}
+  },
+  elements: {point: {radius: 0, hitRadius: 8}, line: {borderWidth: 2, tension: 0.25}}
+});
+function lineChart(id, labels, series, yFmt) {
+  if (!labels || !labels.length) return;
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: {labels, datasets: series.map((s, i) => ({label: s.name, data: s.data, borderColor: s.color || PALETTE[i % PALETTE.length], backgroundColor: "transparent"}))},
+    options: baseOpts(yFmt)
+  });
+}
+
+lineChart("c-unemp", D.charts.unemployment.labels, D.charts.unemployment.series, v => v + "%");
+lineChart("c-infl", D.charts.inflation.labels, D.charts.inflation.series, v => v + "%");
+lineChart("c-wages", D.charts.wages.labels, D.charts.wages.series, v => v + "%");
+lineChart("c-gas", D.charts.gas.labels, [{name: "Regular gas, $/gal", data: D.charts.gas.data, color: "#B97400"}], v => "$" + v);
+lineChart("c-claims", D.charts.claims.labels, [{name: "Initial claims", data: D.charts.claims.data, color: "#0E7C66"}], v => (v / 1000) + "k");
+
+if (D.charts.payrolls.labels.length) {
+  new Chart(document.getElementById("c-pay"), {
+    type: "bar",
+    data: {labels: D.charts.payrolls.labels, datasets: [{label: "Jobs added (k)", data: D.charts.payrolls.data,
+      backgroundColor: D.charts.payrolls.data.map(v => v >= 0 ? "#0E7C66" : "#C93B3B")}]},
+    options: {...baseOpts(v => v + "k"), plugins: {legend: {display: false}}}
+  });
+}
+
+// ---- Political trends from weekly history ----
+const H = D.politics.history || {dates: []};
+const hLabels = (H.dates || []).map(d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"}));
+function trendOrNote(wrapId, canvasId, series, yFmt) {
+  const hasData = hLabels.length >= 2 && series.some(s => (s.data || []).filter(v => v != null).length >= 2);
+  if (!hasData) {
+    document.getElementById(wrapId).innerHTML =
+      "<div class='empty-note'>Trend appears after two weekly runs.<br>Latest values are in the cards above.</div>";
+    return;
+  }
+  lineChart(canvasId, hLabels, series, yFmt);
+}
+trendOrNote("w-appr", "c-appr",
+  [{name: "Approve", data: H.approve, color: "#0E7C66"}, {name: "Disapprove", data: H.disapprove, color: "#C93B3B"}], v => v + "%");
+trendOrNote("w-gb", "c-gb",
+  [{name: "Democrats", data: H.generic_dem, color: "#2E6FDB"}, {name: "Republicans", data: H.generic_gop, color: "#C93B3B"}], v => v + "%");
+trendOrNote("w-odds", "c-odds",
+  [{name: "House (Dem win)", data: H.house_dem_odds, color: "#2E6FDB"}, {name: "Senate (Dem win)", data: H.senate_dem_odds, color: "#7A4FBF"}], v => v + "%");
+
+// ---- Demographics table ----
+const P = D.politics.current || {};
+document.getElementById("demo-src").textContent = P.approval_by_group_source || "";
+const tbody = document.querySelector("#demo-table tbody");
+(P.approval_by_group || []).forEach(g => {
+  if (g.approve == null) return;
+  const net = g.approve - g.disapprove;
+  const w = Math.min(Math.abs(net), 50);
+  const bar = net >= 0
+    ? `<i style="left:50%;width:${w}%;background:#0E7C66"></i>`
+    : `<i style="right:50%;width:${w}%;background:#C93B3B"></i>`;
+  const tr = el("tr", "", `
+    <td>${g.group}</td>
+    <td class="num">${fmt(g.approve, 0)}%</td>
+    <td class="num">${fmt(g.disapprove, 0)}%</td>
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <span class="num" style="font-family:var(--mono);font-weight:600;min-width:34px">${net > 0 ? "+" : ""}${fmt(net, 0)}</span>
+      <div class="netbar" style="flex:1">${bar}</div></div></td>`);
+  tbody.appendChild(tr);
+});
+document.getElementById("specials").textContent = P.special_elections_note || "—";
+document.getElementById("ratings").textContent = P.race_ratings_note || "—";
+</script>
+</body>
+</html>
