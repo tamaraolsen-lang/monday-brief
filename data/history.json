@@ -14,18 +14,18 @@
     "initial_claims": 229000.0,
     "real_wage_growth": -0.8,
     "gas_price": 4.146,
-    "mortgage_rate": 6.48,
+    "mortgage_rate": 6.52,
     "consumer_sentiment": 49.8
    },
    "politics": {
-    "approve": 40,
-    "disapprove": 58,
+    "approve": 38.6,
+    "disapprove": 58.0,
     "econ_approve": 29,
-    "generic_dem": 48,
-    "generic_gop": 41,
+    "generic_dem": 48.0,
+    "generic_gop": 41.9,
     "house_dem_odds": 73,
     "senate_dem_odds": 45,
-    "right_direction": 28
+    "right_direction": 21
    }
   }
  ]
