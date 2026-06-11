@@ -153,33 +153,54 @@
 
 <script>
 const D = /*__DATA__*/null;
-if (!D) { document.body.innerHTML = "<p style='padding:40px;font-family:monospace'>No data injected — run scripts/update_dashboard.py</p>"; }
+
+// ---- error surfacing: never debug a blank page again ----
+const ERRORS = [];
+function reportError(where, e) {
+  ERRORS.push(where + ": " + (e && e.message ? e.message : e));
+  let strip = document.getElementById("error-strip");
+  if (!strip) {
+    strip = document.createElement("div");
+    strip.id = "error-strip";
+    strip.style.cssText = "background:#F9E8E8;border:1px solid #C93B3B;color:#C93B3B;" +
+      "font-family:monospace;font-size:12px;padding:10px 14px;border-radius:6px;margin:14px 0;white-space:pre-wrap";
+    document.querySelector(".wrap").insertBefore(strip, document.querySelector(".bluf"));
+  }
+  strip.textContent = "Page issue (data may be partial) — send this to Claude:\n" + ERRORS.join("\n");
+}
+function safe(where, fn) { try { fn(); } catch (e) { reportError(where, e); } }
+window.addEventListener("error", ev => reportError("window", ev.message));
 
 const fmt = (v, dec) => v == null ? "—" : Number(v).toLocaleString("en-US", {maximumFractionDigits: dec ?? 1});
 const PALETTE = ["#16212E","#0E7C66","#C93B3B","#B97400","#2E6FDB","#7A4FBF","#4E8DA6","#9AA3AE"];
-Chart.defaults.font.family = "'Inter',sans-serif";
-Chart.defaults.font.size = 11;
-Chart.defaults.color = "#69727E";
-Chart.defaults.borderColor = "#E3E7EC";
-
+const HAS_CHART = typeof Chart !== "undefined";
 function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
-// ---- Masthead & bottom line ----
-document.getElementById("week-of").textContent = D.week_of;
-document.getElementById("generated-at").textContent = "Updated " + D.generated_at;
-if (D.sample) document.getElementById("sample-banner").style.display = "block";
-document.getElementById("headline").textContent = (D.analysis || {}).headline || "";
-const tw = document.getElementById("takeaways");
-((D.analysis || {}).takeaways || []).forEach(t => {
-  const row = el("div", "takeaway");
-  row.appendChild(el("span", "tag " + (t.tag === "politics" ? "politics" : "economy"), t.tag));
-  row.appendChild(el("div", "", t.text));
-  tw.appendChild(row);
-});
-document.getElementById("economy-summary").textContent = (D.analysis || {}).economy_summary || "";
-document.getElementById("politics-summary").textContent = (D.analysis || {}).politics_summary || "";
+if (!D) {
+  document.body.innerHTML = "<p style='padding:40px;font-family:monospace'>No data injected — run scripts/update_dashboard.py</p>";
+} else {
 
-// ---- Stat cards ----
+// ---- 1) All text content first: masthead, bottom line, summaries ----
+safe("masthead", () => {
+  document.getElementById("week-of").textContent = D.week_of || "";
+  document.getElementById("generated-at").textContent = "Updated " + (D.generated_at || "");
+  if (D.sample) document.getElementById("sample-banner").style.display = "block";
+});
+safe("bottom-line", () => {
+  const A = D.analysis || {};
+  document.getElementById("headline").textContent = A.headline || "";
+  const tw = document.getElementById("takeaways");
+  (A.takeaways || []).forEach(t => {
+    const row = el("div", "takeaway");
+    row.appendChild(el("span", "tag " + (t.tag === "politics" ? "politics" : "economy"), t.tag || "note"));
+    row.appendChild(el("div", "", t.text || ""));
+    tw.appendChild(row);
+  });
+  document.getElementById("economy-summary").textContent = A.economy_summary || "";
+  document.getElementById("politics-summary").textContent = A.politics_summary || "";
+});
+
+// ---- 2) Stat cards ----
 function chipClass(card) {
   if (card.delta == null) return "none";
   if (card.delta === 0) return "flat";
@@ -190,7 +211,7 @@ function chipClass(card) {
 function renderCards(list, mount) {
   const root = document.getElementById(mount);
   (list || []).forEach(c => {
-    const dec = (c.unit === "$" || c.label.includes("mortgage")) ? 2 : (c.unit === "" && c.value > 1000 ? 0 : 1);
+    const dec = (c.unit === "$" || (c.label || "").includes("mortgage")) ? 2 : (c.unit === "" && c.value > 1000 ? 0 : 1);
     const valueHtml = c.value == null ? "—"
       : (c.prefix_unit ? "<span class='unit'>$</span>" + fmt(c.value, dec)
                        : fmt(c.value, dec) + (c.unit && c.unit !== "$" ? "<span class='unit'>" + c.unit + "</span>" : ""));
@@ -203,10 +224,48 @@ function renderCards(list, mount) {
     root.appendChild(card);
   });
 }
-renderCards(D.cards.economy, "econ-cards");
-renderCards(D.cards.politics, "pol-cards");
+safe("economy-cards", () => renderCards((D.cards || {}).economy, "econ-cards"));
+safe("politics-cards", () => renderCards((D.cards || {}).politics, "pol-cards"));
 
-// ---- Charts ----
+// ---- 3) Demographics table & notes (text, before charts) ----
+safe("demographics", () => {
+  const P = (D.politics || {}).current || {};
+  document.getElementById("demo-src").textContent = P.approval_by_group_source || "";
+  const tbody = document.querySelector("#demo-table tbody");
+  (P.approval_by_group || []).forEach(g => {
+    if (g.approve == null) return;
+    const net = g.approve - g.disapprove;
+    const w = Math.min(Math.abs(net), 50);
+    const bar = net >= 0
+      ? `<i style="left:50%;width:${w}%;background:#0E7C66"></i>`
+      : `<i style="right:50%;width:${w}%;background:#C93B3B"></i>`;
+    tbody.appendChild(el("tr", "", `
+      <td>${g.group}</td>
+      <td class="num">${fmt(g.approve, 0)}%</td>
+      <td class="num">${fmt(g.disapprove, 0)}%</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <span class="num" style="font-family:var(--mono);font-weight:600;min-width:34px">${net > 0 ? "+" : ""}${fmt(net, 0)}</span>
+        <div class="netbar" style="flex:1">${bar}</div></div></td>`));
+  });
+  document.getElementById("specials").textContent = P.special_elections_note || "—";
+  document.getElementById("ratings").textContent = P.race_ratings_note || "—";
+});
+
+// ---- 4) Charts last, fully isolated ----
+function chartFallback(canvasId) {
+  const c = document.getElementById(canvasId);
+  if (c && c.parentElement) c.parentElement.innerHTML =
+    "<div class='empty-note'>Chart unavailable (couldn't load the chart library — check ad blockers, or refresh).</div>";
+}
+function lineChart(id, labels, series, yFmt) {
+  if (!labels || !labels.length) return;
+  if (!HAS_CHART) { chartFallback(id); return; }
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: {labels, datasets: (series || []).map((s, i) => ({label: s.name, data: s.data, borderColor: s.color || PALETTE[i % PALETTE.length], backgroundColor: "transparent"}))},
+    options: baseOpts(yFmt)
+  });
+}
 const baseOpts = (yFmt) => ({
   responsive: true, maintainAspectRatio: false, spanGaps: true,
   interaction: {mode: "index", intersect: false},
@@ -217,71 +276,54 @@ const baseOpts = (yFmt) => ({
   },
   elements: {point: {radius: 0, hitRadius: 8}, line: {borderWidth: 2, tension: 0.25}}
 });
-function lineChart(id, labels, series, yFmt) {
-  if (!labels || !labels.length) return;
-  new Chart(document.getElementById(id), {
-    type: "line",
-    data: {labels, datasets: series.map((s, i) => ({label: s.name, data: s.data, borderColor: s.color || PALETTE[i % PALETTE.length], backgroundColor: "transparent"}))},
-    options: baseOpts(yFmt)
-  });
-}
 
-lineChart("c-unemp", D.charts.unemployment.labels, D.charts.unemployment.series, v => v + "%");
-lineChart("c-infl", D.charts.inflation.labels, D.charts.inflation.series, v => v + "%");
-lineChart("c-wages", D.charts.wages.labels, D.charts.wages.series, v => v + "%");
-lineChart("c-gas", D.charts.gas.labels, [{name: "Regular gas, $/gal", data: D.charts.gas.data, color: "#B97400"}], v => "$" + v);
-lineChart("c-claims", D.charts.claims.labels, [{name: "Initial claims", data: D.charts.claims.data, color: "#0E7C66"}], v => (v / 1000) + "k");
+safe("chart-setup", () => {
+  if (!HAS_CHART) return;
+  Chart.defaults.font.family = "'Inter',sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = "#69727E";
+  Chart.defaults.borderColor = "#E3E7EC";
+});
 
-if (D.charts.payrolls.labels.length) {
+const C = D.charts || {};
+safe("chart-unemployment", () => lineChart("c-unemp", (C.unemployment||{}).labels, (C.unemployment||{}).series, v => v + "%"));
+safe("chart-inflation", () => lineChart("c-infl", (C.inflation||{}).labels, (C.inflation||{}).series, v => v + "%"));
+safe("chart-wages", () => lineChart("c-wages", (C.wages||{}).labels, (C.wages||{}).series, v => v + "%"));
+safe("chart-gas", () => lineChart("c-gas", (C.gas||{}).labels, [{name: "Regular gas, $/gal", data: (C.gas||{}).data, color: "#B97400"}], v => "$" + v));
+safe("chart-claims", () => lineChart("c-claims", (C.claims||{}).labels, [{name: "Initial claims", data: (C.claims||{}).data, color: "#0E7C66"}], v => (v / 1000) + "k"));
+safe("chart-payrolls", () => {
+  const pay = C.payrolls || {labels: []};
+  if (!pay.labels.length) return;
+  if (!HAS_CHART) { chartFallback("c-pay"); return; }
   new Chart(document.getElementById("c-pay"), {
     type: "bar",
-    data: {labels: D.charts.payrolls.labels, datasets: [{label: "Jobs added (k)", data: D.charts.payrolls.data,
-      backgroundColor: D.charts.payrolls.data.map(v => v >= 0 ? "#0E7C66" : "#C93B3B")}]},
+    data: {labels: pay.labels, datasets: [{label: "Jobs added (k)", data: pay.data,
+      backgroundColor: pay.data.map(v => v >= 0 ? "#0E7C66" : "#C93B3B")}]},
     options: {...baseOpts(v => v + "k"), plugins: {legend: {display: false}}}
   });
-}
-
-// ---- Political trends from weekly history ----
-const H = D.politics.history || {dates: []};
-const hLabels = (H.dates || []).map(d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"}));
-function trendOrNote(wrapId, canvasId, series, yFmt) {
-  const hasData = hLabels.length >= 2 && series.some(s => (s.data || []).filter(v => v != null).length >= 2);
-  if (!hasData) {
-    document.getElementById(wrapId).innerHTML =
-      "<div class='empty-note'>Trend appears after two weekly runs.<br>Latest values are in the cards above.</div>";
-    return;
-  }
-  lineChart(canvasId, hLabels, series, yFmt);
-}
-trendOrNote("w-appr", "c-appr",
-  [{name: "Approve", data: H.approve, color: "#0E7C66"}, {name: "Disapprove", data: H.disapprove, color: "#C93B3B"}], v => v + "%");
-trendOrNote("w-gb", "c-gb",
-  [{name: "Democrats", data: H.generic_dem, color: "#2E6FDB"}, {name: "Republicans", data: H.generic_gop, color: "#C93B3B"}], v => v + "%");
-trendOrNote("w-odds", "c-odds",
-  [{name: "House (Dem win)", data: H.house_dem_odds, color: "#2E6FDB"}, {name: "Senate (Dem win)", data: H.senate_dem_odds, color: "#7A4FBF"}], v => v + "%");
-
-// ---- Demographics table ----
-const P = D.politics.current || {};
-document.getElementById("demo-src").textContent = P.approval_by_group_source || "";
-const tbody = document.querySelector("#demo-table tbody");
-(P.approval_by_group || []).forEach(g => {
-  if (g.approve == null) return;
-  const net = g.approve - g.disapprove;
-  const w = Math.min(Math.abs(net), 50);
-  const bar = net >= 0
-    ? `<i style="left:50%;width:${w}%;background:#0E7C66"></i>`
-    : `<i style="right:50%;width:${w}%;background:#C93B3B"></i>`;
-  const tr = el("tr", "", `
-    <td>${g.group}</td>
-    <td class="num">${fmt(g.approve, 0)}%</td>
-    <td class="num">${fmt(g.disapprove, 0)}%</td>
-    <td><div style="display:flex;align-items:center;gap:8px">
-      <span class="num" style="font-family:var(--mono);font-weight:600;min-width:34px">${net > 0 ? "+" : ""}${fmt(net, 0)}</span>
-      <div class="netbar" style="flex:1">${bar}</div></div></td>`);
-  tbody.appendChild(tr);
 });
-document.getElementById("specials").textContent = P.special_elections_note || "—";
-document.getElementById("ratings").textContent = P.race_ratings_note || "—";
+
+safe("chart-political-trends", () => {
+  const H = (D.politics || {}).history || {dates: []};
+  const hLabels = (H.dates || []).map(d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"}));
+  function trendOrNote(wrapId, canvasId, series, yFmt) {
+    const hasData = hLabels.length >= 2 && series.some(s => (s.data || []).filter(v => v != null).length >= 2);
+    if (!hasData) {
+      document.getElementById(wrapId).innerHTML =
+        "<div class='empty-note'>Trend appears after two weekly runs.<br>Latest values are in the cards above.</div>";
+      return;
+    }
+    lineChart(canvasId, hLabels, series, yFmt);
+  }
+  trendOrNote("w-appr", "c-appr",
+    [{name: "Approve", data: H.approve, color: "#0E7C66"}, {name: "Disapprove", data: H.disapprove, color: "#C93B3B"}], v => v + "%");
+  trendOrNote("w-gb", "c-gb",
+    [{name: "Democrats", data: H.generic_dem, color: "#2E6FDB"}, {name: "Republicans", data: H.generic_gop, color: "#C93B3B"}], v => v + "%");
+  trendOrNote("w-odds", "c-odds",
+    [{name: "House (Dem win)", data: H.house_dem_odds, color: "#2E6FDB"}, {name: "Senate (Dem win)", data: H.senate_dem_odds, color: "#7A4FBF"}], v => v + "%");
+});
+
+}
 </script>
 </body>
 </html>
