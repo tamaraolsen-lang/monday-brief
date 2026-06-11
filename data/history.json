@@ -1,1 +1,32 @@
-{"snapshots": []}
+{
+ "snapshots": [
+  {
+   "date": "2026-06-11",
+   "economy": {
+    "unemployment_overall": 4.3,
+    "unemployment_black": 6.6,
+    "unemployment_hispanic": 5.0,
+    "cpi_headline": 4.2,
+    "cpi_core": 2.8,
+    "cpi_gas": 40.5,
+    "cpi_groceries": 2.7,
+    "payrolls_change_k": 172,
+    "initial_claims": 229000.0,
+    "real_wage_growth": -0.8,
+    "gas_price": 4.146,
+    "mortgage_rate": 6.48,
+    "consumer_sentiment": 49.8
+   },
+   "politics": {
+    "approve": 35,
+    "disapprove": 60,
+    "econ_approve": 29,
+    "generic_dem": 49.2,
+    "generic_gop": 43.5,
+    "house_dem_odds": 73,
+    "senate_dem_odds": 45,
+    "right_direction": 32
+   }
+  }
+ ]
+}
