@@ -335,6 +335,34 @@
     "senate_dem_odds": 42,
     "right_direction": 34
    }
+  },
+  {
+   "date": "2026-08-24",
+   "economy": {
+    "unemployment_overall": 4.1,
+    "unemployment_black": 6.3,
+    "unemployment_hispanic": 4.6,
+    "cpi_headline": 3.3,
+    "cpi_core": 2.5,
+    "cpi_gas": 24.6,
+    "cpi_groceries": 2.6,
+    "payrolls_change_k": -23,
+    "initial_claims": 206000.0,
+    "real_wage_growth": -0.1,
+    "gas_price": 4.049,
+    "mortgage_rate": 6.65,
+    "consumer_sentiment": 49.5
+   },
+   "politics": {
+    "approve": 36.2,
+    "disapprove": 59.8,
+    "econ_approve": 37,
+    "generic_dem": 48.2,
+    "generic_gop": 41.8,
+    "house_dem_odds": 87,
+    "senate_dem_odds": 51,
+    "right_direction": 34
+   }
   }
  ]
 }
